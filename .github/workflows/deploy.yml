@@ -3,11 +3,10 @@ name: Internal VM Deployment Pipeline
 on:
   push:
     branches:
-      - main  # Triggers the pipeline when you push to main
+      - main
 
 jobs:
   build-and-deploy:
-    # CRITICAL: This tells GitHub to hand the job to your internal VM runner
     runs-on: self-hosted
 
     steps:
@@ -16,12 +15,19 @@ jobs:
 
       - name: Run Syntax Test
         run: |
-          echo "🔄 Running local syntax validation tests..."
-          # Add whatever lint/test commands your project uses here
-          # Example for PHP: php -l index.php
+          echo "🔍 Checking PHP syntax for errors..."
+          # This will actively scan your file and break the build if a semicolon is missing
+          php -l public/index.php
+
+      - name: Deploy Fresh Code to Live Directory
+        run: |
+          echo "🚚 Syncing code from GitHub runner workspace to the live website path..."
+          # Copies everything from the runner folder to your live folder, ignoring the runner folder itself
+          rsync -av --delete --exclude='actions-runner' ./ /var/www/laravelblog.com-v1/
 
       - name: Local Container Deployment
         run: |
-          echo "🚀 Deploying application containers on VM..."
-          # If you use Docker Compose:
+          echo "🚀 Restarting or reloading application containers..."
+          # If your app runs on Docker containers, uncomment the lines below:
+          # cd /var/www/laravelblog.com-v1
           # docker compose up -d --build
