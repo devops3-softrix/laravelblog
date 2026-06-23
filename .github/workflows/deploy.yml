@@ -25,9 +25,3 @@ jobs:
           # No --delete flag here. Your untracked files are completely safe.
           rsync -av --exclude='actions-runner' ./ /var/www/laravelblog.com-v1/
 
-      - name: Update Composer Dependencies
-        run: |
-          echo "📦 Running composer installation..."
-          cd /var/www/laravelblog.com-v1
-          # Pulls down your packages without messing with local environment setups
-          composer install --no-dev --optimize-autoloader --no-interaction
