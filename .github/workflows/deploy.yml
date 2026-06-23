@@ -3,7 +3,7 @@ name: Internal VM Deployment Pipeline
 on:
   push:
     branches:
-      - main
+      - main  # Triggers when you push to the main branch
 
 jobs:
   build-and-deploy:
@@ -15,19 +15,19 @@ jobs:
 
       - name: Run Syntax Test
         run: |
-          echo "🔍 Checking PHP syntax for errors..."
-          # This will actively scan your file and break the build if a semicolon is missing
+          echo "🔍 Scanning PHP files for syntax errors..."
+          # Validates your entry file before doing anything else
           php -l public/index.php
 
       - name: Deploy Fresh Code to Live Directory
         run: |
-          echo "🚚 Syncing code from GitHub runner workspace to the live website path..."
-          # Copies everything from the runner folder to your live folder, ignoring the runner folder itself
-          rsync -av --delete --exclude='actions-runner' ./ /var/www/laravelblog.com-v1/
+          echo "🚚 Syncing code files safely to server..."
+          # No --delete flag here. Your untracked files are completely safe.
+          rsync -av --exclude='actions-runner' ./ /var/www/laravelblog.com-v1/
 
-      - name: Local Container Deployment
+      - name: Update Composer Dependencies
         run: |
-          echo "🚀 Restarting or reloading application containers..."
-          # If your app runs on Docker containers, uncomment the lines below:
-          # cd /var/www/laravelblog.com-v1
-          # docker compose up -d --build
+          echo "📦 Running composer installation..."
+          cd /var/www/laravelblog.com-v1
+          # Pulls down your packages without messing with local environment setups
+          composer install --no-dev --optimize-autoloader --no-interaction
