@@ -1,0 +1,27 @@
+name: Internal VM Deployment Pipeline
+
+on:
+  push:
+    branches:
+      - main  # Triggers the pipeline when you push to main
+
+jobs:
+  build-and-deploy:
+    # CRITICAL: This tells GitHub to hand the job to your internal VM runner
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Run Syntax Test
+        run: |
+          echo "🔄 Running local syntax validation tests..."
+          # Add whatever lint/test commands your project uses here
+          # Example for PHP: php -l index.php
+
+      - name: Local Container Deployment
+        run: |
+          echo "🚀 Deploying application containers on VM..."
+          # If you use Docker Compose:
+          # docker compose up -d --build
