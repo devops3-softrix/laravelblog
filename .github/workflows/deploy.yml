@@ -3,7 +3,7 @@ name: Internal VM Deployment Pipeline
 on:
   push:
     branches:
-      - main  # Triggers when you push to the main branch
+      - main
 
 jobs:
   build-and-deploy:
@@ -15,13 +15,35 @@ jobs:
 
       - name: Run Syntax Test
         run: |
-          echo "🔍 Scanning PHP files for syntax errors..."
-          # Validates your entry file before doing anything else
+          echo "🔍 Scanning PHP files for syntax errors on host..."
           php -l public/index.php
-
+  
       - name: Deploy Fresh Code to Live Directory
         run: |
           echo "🚚 Syncing code files safely to server..."
-          # No --delete flag here. Your untracked files are completely safe.
-          rsync -av --exclude='actions-runner' ./ /var/www/laravelblog.com-v1/
+          # --chmod=D755,F644 ensures directories are 755 and files are 644 on destination
+          rsync -av \
+            --exclude='actions-runner' \
+            --exclude='.git' \
+            --exclude='.github' \
+            --chmod=D755,F644 \
+            ./ /var/www/laravelblog.com-v1/
 
+      - name: Run Composer Install Inside Container
+        run: |
+          echo "🔍 Finding FrankenPHP container..."
+          CONTAINER_ID=$(docker ps --filter "name=frankenphp_84" -q)
+
+          if [ -z "$CONTAINER_ID" ]; then
+            echo "❌ Error: FrankenPHP container is not running! Cannot execute dependencies installation."
+            exit 1
+          fi
+
+          echo "📦 Executing Composer install inside container ($CONTAINER_ID)..."
+          docker exec $CONTAINER_ID bash -c '
+            cd /var/www/laravelblog.com-v1 &&
+            composer install --no-dev --optimize-autoloader --no-interaction &&
+
+            echo "🧹 Clearing compiled blade views..." &&
+            php artisan view:clear
+          '
